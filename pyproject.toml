@@ -17,8 +17,6 @@ dependencies = [
 [project.scripts]
 dlogs = "dlogs.cli:main"
 
-license = { text = "MIT" } # Keeping this for now as text is still valid in recent versions, but will fix strict discovery
-
 [tool.setuptools]
 packages = ["dlogs"]
 include-package-data = true
