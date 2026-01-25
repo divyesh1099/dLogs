@@ -1,0 +1,94 @@
+version: "3.8"
+
+services:
+  # --- DASHBOARD ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dlogs-grafana
+    ports: ["3000:3000"]
+    restart: unless-stopped
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      # Auto-Provisioning
+      - ./provisioning:/etc/grafana/provisioning
+      - ./dashboards:/etc/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on: [prometheus, loki]
+
+  # --- METRICS DB ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dlogs-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=3d'
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-storage:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --- LOGS DB ---
+  loki:
+    image: grafana/loki:latest
+    container_name: dlogs-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml -table-manager.retention-period=3d
+    ports: ["3100:3100"]
+
+  # --- LOG COLLECTOR ---
+  promtail:
+    image: grafana/promtail:latest
+    container_name: dlogs-promtail
+    restart: unless-stopped
+    volumes:
+      - ./config/promtail.yml:/etc/promtail/config.yml
+      - /var/log:/var/log
+      # Host logs from Windows C:/Logs
+      - C:/Logs:/var/log/host_logs
+    command: -config.file=/etc/promtail/config.yml
+
+  # --- CONTAINER METRICS (cAdvisor) ---
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: dlogs-cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports: ["8090:8080"]
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  # --- GPU MONITORING (WSL2 FIX) ---
+  nvidia-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:1.4.1
+    container_name: dlogs-gpu
+    restart: unless-stopped
+    ports: ["9835:9835"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # --- ALERTS (ntfy) ---
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: dlogs-ntfy
+    command: serve
+    environment:
+      - NTFY_BASE_URL=https://ntfy.sh
+    ports: ["8080:80"]
+
+volumes:
+  grafana-storage:
+  prometheus-storage:
