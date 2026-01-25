@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  PACKAGE_NAME: dlogs
+  PACKAGE_NAME: motidivya-dlogs
   IMAGE_NAME: dlogs
 
 jobs:
