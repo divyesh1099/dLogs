@@ -47,12 +47,12 @@ jobs:
         id: bump
         run: |
           # Read version from pyproject.toml
-          OLD_VER=$(grep -m1 'version = "' pyproject.toml | cut -d'"' -f2)
+          OLD_VER=$(grep -m1 'version = "' pyproject.toml | cut -d'"' -f2 | tr -d '\r')
           echo "Current Version: $OLD_VER"
 
           # Bump patch version (Simple Semantic Versioning)
           IFS='.' read -r -a parts <<< "$OLD_VER"
-          ((parts[2]++))
+          parts[2]=$((parts[2] + 1))
           NEW_VER="${parts[0]}.${parts[1]}.${parts[2]}"
           echo "New Version: $NEW_VER"
 
