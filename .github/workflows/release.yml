@@ -116,13 +116,13 @@ jobs:
           path: dist
 
       - name: Publish to PyPI (Trusted Publishing)
-        if: ${{ secrets.PYPI_API_TOKEN == '' }}
+        if: secrets.PYPI_API_TOKEN == ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
 
       - name: Publish to PyPI (API token)
-        if: ${{ secrets.PYPI_API_TOKEN != '' }}
+        if: secrets.PYPI_API_TOKEN != ''
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
