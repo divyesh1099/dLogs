@@ -108,6 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    environment: pypi
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -115,7 +116,18 @@ jobs:
           path: dist
 
       - name: Publish to PyPI (Trusted Publishing)
+        if: ${{ secrets.PYPI_API_TOKEN == '' }}
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+      - name: Publish to PyPI (API token)
+        if: ${{ secrets.PYPI_API_TOKEN != '' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
 
   # ------------------------
   # 4) Build standalone binaries
@@ -236,14 +248,18 @@ jobs:
             dlogs/assets/provisioning
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ needs.bump-version.outputs.tag_name }}
+          tag: ${{ needs.bump-version.outputs.tag_name }}
           name: Release ${{ needs.bump-version.outputs.tag_name }}
           draft: false
           prerelease: false
-          files: |
-            release_assets/dlogs-installer.zip
+          allowUpdates: true
+          replacesArtifacts: true
+          artifacts: |
             install_dlogs.ps1
             install_dlogs.sh
-            release_assets/**/*
+            release_assets/dlogs-installer.zip
+            release_assets/*/*.whl
+            release_assets/*/*.tar.gz
+            release_assets/*/*.zip
