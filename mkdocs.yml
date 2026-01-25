@@ -1,0 +1,58 @@
+site_name: dLogs Documentation
+site_description: The 1-Click Observability Stack for Windows, Docker, and Python.
+site_url: https://divyesh1099.github.io/dLogs/
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep-purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep-purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+
+repo_url: https://github.com/divyesh1099/dLogs
+repo_name: divyesh1099/dLogs
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Configuration: getting-started/configuration.md
+  - Features:
+      - Dashboards: features/dashboards.md
+      - Python SDK: features/sdk.md
+      - Alerts (ntfy): features/alerts.md
+  - Technical:
+      - Architecture: technical/architecture.md
+      - Troubleshooting: technical/troubleshooting.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
