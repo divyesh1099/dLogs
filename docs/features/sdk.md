@@ -1,57 +1,43 @@
-# Python SDK (`dlogs`)
+# Python SDK
 
-The `dLogs` library provides a wrapper around the standard Python `logging` module to integrate seamlessly with the dLogs stack.
+The `motidivya-dlogs` package includes a simple, zero-dependency SDK for Python applications.
 
 ## Installation
 
 ```bash
-pip install dlogs
+pip install motidivya-dlogs
 ```
 
-## Setup in Code
+## Usage
 
-It takes just two lines to start logging structured JSON data that Loki can index.
+### Basic Initialization
 
 ```python
 from dlogs import dLogs
 
-# 1. Initialize
-# This creates a file at C:/Logs/my_app_name.json
-logger = dLogs("my_app_name")
+# Initialize logger for your application
+# This will create a log file at C:/Logs/my-app.json (Windows)
+# or /tmp/dlogs/my-app.json (Linux/Mac default)
+logger = dLogs("my-app")
 
-# 2. Log Information
-logger.log("Connecting to database...")
-
-# 3. Log Alerts
-# This will be highlighted in Grafana and can trigger notifications
-try:
-    result = 10 / 0
-except ZeroDivisionError:
-    logger.alert("Critical Failure: Division by zero!")
+logger.log("Info message")
+logger.alert("Error message")
 ```
 
-## How It Works
+### Advanced Usage
 
-1.  **File Creation**: The SDK uses a `RotatingFileHandler` to write to `C:/Logs/{app_name}.json`.
-2.  **Formatting**: It formats the log record as a single-line JSON object:
-    ```json
-    {
-      "time": "2023-10-25 10:00:00",
-      "app": "my_app_name",
-      "level": "INFO",
-      "msg": "..."
-    }
-    ```
-3.  **Promtail**: The Promtail container has a volume mount on `C:/Logs`. It watches for new lines in `*.json`.
-4.  **Ingestion**: Promtail pushes the JSON to Loki with the label `job="varlogs"`.
+The `dLogs` class automatically handles JSON formatting so that Promtail can parse it into key-value pairs in Loki.
 
-## Advanced Usage
+**Structure:**
 
-Since `logger.logger` is a standard `logging.Logger` object, you can pass it to other libraries.
-
-```python
-import requests
-
-# Pass the underlying logger to other libs
-my_lib.run(logger=logger.logger)
+```json
+{
+  "time": "2023-10-27 10:00:00",
+  "app": "my-app",
+  "level": "INFO",
+  "msg": "Info message"
+}
 ```
+
+This structure allows you to query in Grafana:
+`{app="my-app"} |= "Info message"`

@@ -1,58 +1,63 @@
-# Installation Guide
+# Installation
 
-dLogs relies on **Docker** for the backend infrastructure and **PowerShell** for automation on Windows.
+dLogs is designed to be installed as a Python package or run via Docker.
 
-## Prerequisites
+## Methods
 
-- **Operating System**: Windows 10/11 Pro or Enterprise (with Hyper-V/WSL2 support).
-- **Docker Desktop**: Must be installed and running. [Download Here](https://www.docker.com/products/docker-desktop).
-- **Python 3.8+**: Required for the CLI tool (optional if just using the script).
-- **Administrator Privileges**: Required to install Windows Services and Open Firewall Ports.
+### 1. Python (Recommended)
 
----
+Requires Python 3.9+.
 
-## ⚡ Quick Start (Windows)
+```bash
+pip install motidivya-dlogs
+```
 
-1.  **Download the Installer**:
-    Download the latest `install_dlogs.ps1` from our [Releases Page](https://github.com/divyesh1099/dLogs/releases).
+**Usage:**
 
-2.  **Run as Administrator**:
-    Open PowerShell as Admin, navigate to the folder, and run:
+The CLI provides commands to manage the stack.
 
-    ```powershell
-    .\install_dlogs.ps1
-    ```
+```bash
+# 1. Create a directory for your stack configuration
+mkdir my-monitoring
+cd my-monitoring
 
-    ??? info "What does this script do?"
-    _ Creates `C:\dLogs` (App) and `C:\Logs` (Data).
-    _ Downloads `windows_exporter.msi`.
-    _ Generates config files (`prometheus.yml`, `promtail.yml`) dynamically.
-    _ Runs `docker-compose up -d`.
+# 2. Initialize the configuration files
+dlogs init .
 
-3.  **Verify Status**:
-    Open your browser to [http://localhost:3000](http://localhost:3000).
-    - **Username**: `admin`
-    - **Password**: `admin` (You will be prompted to change this).
+# 3. Start the services
+dlogs up .
 
----
+# 4. Check status
+dlogs status .
 
-## 🛠️ Manual Installation (Linux/Mac)
+# 5. Stop services
+dlogs down .
+```
 
-While the automation script is Windows-focused, the stack is pure Docker.
+### 2. Docker
 
-1.  **Clone the Repo**:
+If you don't want to install Python, you can use the official Docker image.
 
-    ```bash
-    git clone https://github.com/divyesh1099/dLogs.git
-    cd dLogs
-    ```
+```bash
+docker run --rm -it \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(pwd):/app/work \
+  divyesh1099/dlogs up /app/work
+```
 
-2.  **Configure Environment**:
-    Edit `docker-compose.yml`:
-    - Update volume paths (change `C:/Logs` to `./logs`).
-    - Remove `windows_exporter` / `nvidia_exporter` if not applicable.
+### 3. Windows PowerShell Script
 
-3.  **Run**:
-    ```bash
-    docker-compose up -d
-    ```
+For a purely native experience on Windows (downloads `windows_exporter` MSI automatically):
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/divyesh1099/dLogs/main/install_dlogs.ps1 | iex
+```
+
+## Post-Installation
+
+Once the stack is running, you can access the services:
+
+- **Grafana**: [http://localhost:3000](http://localhost:3000) (User: `admin`, Password: `admin`)
+- **Prometheus**: [http://localhost:9090](http://localhost:9090)
+- **Loki**: [http://localhost:3100](http://localhost:3100)
+- **Ntfy**: [http://localhost:8080](http://localhost:8080)
