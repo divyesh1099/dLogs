@@ -1,8 +1,14 @@
-name: Release dLogs (PyPI + Docker + Binaries)
+name: Auto Release (Bump + Build + Publish)
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".gitignore"
 
 permissions:
   contents: write
@@ -15,15 +21,69 @@ env:
 
 jobs:
   # ------------------------
-  # 1) Build Python dist
+  # 1) Bump Version & Tag
+  # ------------------------
+  bump-version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.bump.outputs.version }}
+      tag_name: ${{ steps.bump.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump Version
+        id: bump
+        run: |
+          # Read version from pyproject.toml
+          OLD_VER=$(grep -m1 'version = "' pyproject.toml | cut -d'"' -f2)
+          echo "Current Version: $OLD_VER"
+
+          # Bump patch version (Simple Semantic Versioning)
+          IFS='.' read -r -a parts <<< "$OLD_VER"
+          ((parts[2]++))
+          NEW_VER="${parts[0]}.${parts[1]}.${parts[2]}"
+          echo "New Version: $NEW_VER"
+
+          # Update pyproject.toml
+          sed -i "s/version = \"$OLD_VER\"/version = \"$NEW_VER\"/" pyproject.toml
+
+          # Commit and Push
+          git add pyproject.toml
+          git commit -m "chore: bump version to $NEW_VER [skip ci]"
+          git tag "v$NEW_VER"
+
+          git push origin main
+          git push origin "v$NEW_VER"
+
+          # Output for other jobs
+          echo "version=$NEW_VER" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VER" >> $GITHUB_OUTPUT
+
+  # ------------------------
+  # 2) Build Python dist
   # ------------------------
   build-python:
+    needs: bump-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.tag_name }}
 
       - name: Setup Python
-      - uses: actions/setup-python@v5
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
@@ -41,7 +101,7 @@ jobs:
           path: dist/*
 
   # ------------------------
-  # 2) Publish to PyPI
+  # 3) Publish to PyPI
   # ------------------------
   publish-pypi:
     needs: build-python
@@ -58,9 +118,10 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   # ------------------------
-  # 3) Build standalone binaries
+  # 4) Build standalone binaries
   # ------------------------
   build-binaries:
+    needs: bump-version
     name: Build binaries (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -76,6 +137,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.tag_name }}
 
       - uses: actions/setup-python@v5
         with:
@@ -117,12 +180,15 @@ jobs:
             *.zip
 
   # ------------------------
-  # 4) Build + Push Docker Image (multi-arch)
+  # 5) Build + Push Docker Image (multi-arch)
   # ------------------------
   docker:
+    needs: bump-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.tag_name }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -142,16 +208,18 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.bump-version.outputs.tag_name }}
 
   # ------------------------
-  # 5) Upload Release Assets (zip + scripts + binaries)
+  # 6) Create GitHub Release & Upload Assets
   # ------------------------
   release-assets:
-    needs: [build-binaries]
+    needs: [bump-version, build-binaries]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.bump-version.outputs.tag_name }}
 
       - name: Download binary artifacts
         uses: actions/download-artifact@v4
@@ -167,9 +235,13 @@ jobs:
             dlogs/assets/dashboards \
             dlogs/assets/provisioning
 
-      - name: Upload assets to GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.bump-version.outputs.tag_name }}
+          name: Release ${{ needs.bump-version.outputs.tag_name }}
+          draft: false
+          prerelease: false
           files: |
             release_assets/dlogs-installer.zip
             install_dlogs.ps1
