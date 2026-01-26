@@ -6,7 +6,7 @@ services:
     image: grafana/grafana:latest
     container_name: dlogs-grafana
     ports: ["3000:3000"]
-    restart: unless-stopped
+    restart: always
     volumes:
       - grafana-storage:/var/lib/grafana
       # Auto-Provisioning
@@ -20,7 +20,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: dlogs-prometheus
-    restart: unless-stopped
+    restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=3d'
@@ -34,7 +34,7 @@ services:
   loki:
     image: grafana/loki:latest
     container_name: dlogs-loki
-    restart: unless-stopped
+    restart: always
     command: -config.file=/etc/loki/local-config.yaml -table-manager.retention-period=3d
     ports: ["3100:3100"]
 
@@ -42,7 +42,7 @@ services:
   promtail:
     image: grafana/promtail:latest
     container_name: dlogs-promtail
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./config/promtail.yml:/etc/promtail/config.yml
       - /var/log:/var/log
@@ -54,7 +54,7 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
     container_name: dlogs-cadvisor
-    restart: unless-stopped
+    restart: always
     privileged: true
     ports: ["8090:8080"]
     volumes:
@@ -67,7 +67,7 @@ services:
   nvidia-exporter:
     image: utkuozdemir/nvidia_gpu_exporter:1.4.1
     container_name: dlogs-gpu
-    restart: unless-stopped
+    restart: always
     ports: ["9835:9835"]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -88,6 +88,7 @@ services:
     environment:
       - NTFY_BASE_URL=https://ntfy.sh
     ports: ["8080:80"]
+    restart: always
 
 volumes:
   grafana-storage:
