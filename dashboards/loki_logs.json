@@ -65,7 +65,7 @@
       "targetBlank": true,
       "title": "View In Explore",
       "type": "link",
-      "url": "/explore?orgId=1&left=[\"now-1h\",\"now\",\"Loki\",{\"expr\":\"{job=\\\"$app\\\"}\"},{\"ui\":[true,true,true,\"none\"]}]"
+      "url": "/explore?orgId=1&left=[\"now-1h\",\"now\",\"Loki\",{\"expr\":\"{job=\\\"varlogs\\\",app=~\\\"$app\\\"}\"},{\"ui\":[true,true,true,\"none\"]}]"
     },
     {
       "$$hashKey": "object:61",
@@ -124,7 +124,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(count_over_time({job=\"$app\"} |= \"$search\" [$__interval]))",
+          "expr": "sum(count_over_time({job=\"varlogs\", app=~\"$app\"} |= \"$search\" [$__interval]))",
           "legendFormat": "",
           "refId": "A"
         }
@@ -196,7 +196,7 @@
       },
       "targets": [
         {
-          "expr": "{job=\"$app\"} |= \"$search\" | logfmt",
+          "expr": "{job=\"varlogs\", app=~\"$app\"} |= \"$search\" | json",
           "hide": false,
           "legendFormat": "",
           "refId": "A"
@@ -216,17 +216,17 @@
   "templating": {
     "list": [
       {
-        "allValue": null,
+        "allValue": ".*",
         "current": {},
         "datasource": "dlogs-loki",
-        "definition": "label_values(job)",
+        "definition": "label_values({job=\"varlogs\"}, app)",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "App",
         "multi": false,
         "name": "app",
         "options": [],
-        "query": "label_values(job)",
+        "query": "label_values({job=\"varlogs\"}, app)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,

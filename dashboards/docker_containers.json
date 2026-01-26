@@ -341,7 +341,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node_filesystem_avail_bytes{fstype=\"xfs\"}",
+          "expr": "node_filesystem_avail_bytes{fstype=~\"ext4|xfs\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -350,7 +350,7 @@
           "step": 4
         },
         {
-          "expr": "node_filesystem_size_bytes{fstype=\"xfs\"} - node_filesystem_avail_bytes{fstype=\"xfs\"}",
+          "expr": "node_filesystem_size_bytes{fstype=~\"ext4|xfs\"} - node_filesystem_avail_bytes{fstype=~\"ext4|xfs\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -490,7 +490,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_Buffers",
+          "expr": "node_memory_Dirty_bytes",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -499,7 +499,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_MemFree",
+          "expr": "node_memory_MemFree_bytes",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -508,7 +508,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_MemAvailable",
+          "expr": "node_memory_MemAvailable_bytes",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -517,7 +517,7 @@
           "step": 4
         },
         {
-          "expr": "node_memory_MemTotal - node_memory_MemAvailable",
+          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -526,7 +526,7 @@
           "step": 4
         },
         {
-          "expr": "node_memory_Inactive",
+          "expr": "node_memory_Inactive_bytes",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -535,7 +535,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_KernelStack",
+          "expr": "node_memory_KernelStack_bytes",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -544,7 +544,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_Active",
+          "expr": "node_memory_Active_bytes",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -553,7 +553,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_MemTotal - (node_memory_Active + node_memory_MemFree + node_memory_Inactive)",
+          "expr": "node_memory_MemTotal_bytes - (node_memory_Active_bytes + node_memory_MemFree_bytes + node_memory_Inactive_bytes)",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -562,7 +562,7 @@
           "step": 40
         },
         {
-          "expr": "node_memory_MemFree + node_memory_Inactive ",
+          "expr": "node_memory_MemFree_bytes + node_memory_Inactive_bytes ",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -580,7 +580,7 @@
           "step": 30
         },
         {
-          "expr": "node_memory_Inactive + node_memory_MemFree + node_memory_MemAvailable",
+          "expr": "node_memory_Inactive_bytes + node_memory_MemFree_bytes + node_memory_MemAvailable_bytes",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -672,15 +672,15 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(node_disk_bytes_read[$interval])) by (device)",
+          "expr": "sum(rate(node_disk_read_bytes_total[$interval])) by (device)",
           "intervalFactor": 2,
           "legendFormat": "OUT on /{{device}}",
-          "metric": "node_disk_bytes_read",
+          "metric": "node_disk_read_bytes_total",
           "refId": "A",
           "step": 4
         },
         {
-          "expr": "sum(rate(node_disk_bytes_written[$interval])) by (device)",
+          "expr": "sum(rate(node_disk_written_bytes_total[$interval])) by (device)",
           "intervalFactor": 2,
           "legendFormat": "IN on /{{device}}",
           "metric": "",
@@ -1657,7 +1657,7 @@
         "useTags": false
       },
       {
-        "allValue": "All",
+        "allValue": ".*",
         "current": {},
         "datasource": "dlogs-prometheus",
         "definition": "label_values(container_cpu_usage_seconds_total{job=~\"$job\"}, instance)",

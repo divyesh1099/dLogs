@@ -143,7 +143,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "windows_os_time{instance=~\"$server\"} - on () windows_process_start_time{creating_process_id=\"0\",instance=\"$server\",process=\"Idle\",process_id=\"0\"}",
+          "expr": "windows_os_time{instance=~\"$server\"} - windows_system_system_up_time{instance=~\"$server\"}",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -2232,7 +2232,7 @@
           "application": {
             "filter": ""
           },
-          "expr": "windows_process_thread_count{instance=~\"$server\"}",
+          "expr": "windows_system_threads{instance=~\"$server\"}",
           "format": "time_series",
           "functions": [],
           "group": {
@@ -2247,7 +2247,7 @@
           "item": {
             "filter": ""
           },
-          "legendFormat": "({{process}} threads) ",
+          "legendFormat": "Threads",
           "metric": "mysql_global_status_questions",
           "mode": 0,
           "options": {
