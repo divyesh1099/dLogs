@@ -3,6 +3,7 @@ import logging.handlers
 import socket
 import os
 import json
+import platform
 
 class dLogs:
     """
@@ -14,7 +15,9 @@ class dLogs:
         self.logger.setLevel(logging.INFO)
         
         # Ensure log directory exists
-        log_dir = "C:/Logs"
+        log_dir = os.getenv("DLOGS_LOG_DIR")
+        if not log_dir:
+            log_dir = "C:/Logs" if platform.system() == "Windows" else os.path.join(os.path.expanduser("~"), "dlogs")
         if not os.path.exists(log_dir):
             try:
                 os.makedirs(log_dir)

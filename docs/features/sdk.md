@@ -16,8 +16,10 @@ pip install motidivya-dlogs
 from dlogs import dLogs
 
 # Initialize logger for your application
-# This will create a log file at C:/Logs/my-app.json (Windows)
-# or /tmp/dlogs/my-app.json (Linux/Mac default)
+# This writes to the default OS-specific log directory
+# Windows: C:/Logs/my-app.json
+# Linux/macOS: ~/dlogs/my-app.json
+# You can override both with DLOGS_LOG_DIR
 logger = dLogs("my-app")
 
 logger.log("Info message")

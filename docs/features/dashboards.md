@@ -2,14 +2,17 @@
 
 dLogs comes with 4 production-grade dashboards out of the box.
 
-## 1. Windows Host Overview
+## 1. Host System Metrics
 
 **UID**: `IV0hu1m7z`
 
-This dashboard monitors the physical machine hosting the stack.
+This dashboard monitors whichever host metrics source is active for the current OS.
 
-- **Key Metrics**: CPU Usage (User/System), RAM Available, Disk I/O Latency, Network Bandwidth.
-- **Variables**: Select different Hosts via the dropdown.
+- **Linux**: Uses the built-in dLogs host exporter on port `9100`.
+- **Windows**: Uses `windows_exporter` on port `9182`.
+- **Other/Fallback**: Uses the bundled `node-exporter` container when a native host exporter is not available.
+- **Key Metrics**: CPU usage, memory pressure, filesystem usage, uptime, and network throughput.
+- **Variables**: The host dropdown is populated from live Prometheus series so it only shows exporters that currently have data.
 
 ## 2. Docker Containers
 
@@ -27,7 +30,8 @@ Powered by `cAdvisor`.
 
 Essential for AI/ML workloads.
 
-- **Metrics**: GPU Utilization %, Memory (VRAM) Used, Temperature (C), Power Draw (Watts).
+- **Metrics**: GPU utilization, memory (VRAM) used, temperature, clocks, fan speed, and power draw.
+- **Sources**: Works with the native host-side `nvidia-smi` exporter or the Docker `nvidia_gpu_exporter` profile.
 - **Fan Speed**: Monitor cooling performance.
 
 ## 4. dLogs App Logs (Loki)

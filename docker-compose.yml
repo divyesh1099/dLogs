@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # --- DASHBOARD ---
   grafana:
@@ -21,11 +19,13 @@ services:
     image: prom/prometheus:latest
     container_name: dlogs-prometheus
     restart: always
+    ports: ["9090:9090"]
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=3d'
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./.dlogs-state/prometheus:/etc/prometheus/generated
       - prometheus-storage:/prometheus
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -46,8 +46,9 @@ services:
     volumes:
       - ./config/promtail.yml:/etc/promtail/config.yml
       - /var/log:/var/log
-      # Host logs from Windows C:/Logs
-      - C:/Logs:/var/log/host_logs
+      - type: bind
+        source: ${DLOGS_LOG_DIR:?Set DLOGS_LOG_DIR for your OS or run dlogs init .}
+        target: /var/log/host_logs
     command: -config.file=/etc/promtail/config.yml
 
   # --- CONTAINER METRICS (cAdvisor) ---
@@ -83,11 +84,12 @@ services:
       - --path.rootfs=/rootfs
       - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
 
-  # --- GPU MONITORING (WSL2 FIX) ---
+  # --- GPU MONITORING (OPTIONAL) ---
   nvidia-exporter:
     image: utkuozdemir/nvidia_gpu_exporter:1.4.1
     container_name: dlogs-gpu
     restart: always
+    profiles: ["gpu"]
     ports: ["9835:9835"]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
