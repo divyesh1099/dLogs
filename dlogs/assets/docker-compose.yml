@@ -3,7 +3,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: dlogs-grafana
-    ports: ["3000:3000"]
+    ports: ["127.0.0.1:3000:3000"]
     restart: unless-stopped
     volumes:
       - grafana-storage:/var/lib/grafana
@@ -19,7 +19,7 @@ services:
     image: prom/prometheus:latest
     container_name: dlogs-prometheus
     restart: unless-stopped
-    ports: ["9090:9090"]
+    ports: ["127.0.0.1:9090:9090"]
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=3d'
@@ -36,7 +36,7 @@ services:
     container_name: dlogs-loki
     restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml -table-manager.retention-period=3d
-    ports: ["3100:3100"]
+    ports: ["127.0.0.1:3100:3100"]
 
   # --- LOG COLLECTOR ---
   promtail:
@@ -57,7 +57,7 @@ services:
     container_name: dlogs-cadvisor
     restart: unless-stopped
     privileged: true
-    ports: ["8090:8080"]
+    ports: ["127.0.0.1:8090:8080"]
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -70,7 +70,7 @@ services:
     container_name: dlogs-gpu
     restart: unless-stopped
     profiles: ["gpu"]
-    ports: ["9835:9835"]
+    ports: ["127.0.0.1:9835:9835"]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -88,8 +88,12 @@ services:
     container_name: dlogs-ntfy
     command: serve
     environment:
-      - NTFY_BASE_URL=https://ntfy.sh
-    ports: ["8080:80"]
+      - NTFY_BASE_URL=https://ntfy.divyeshvishwakarma.com
+      - NTFY_SMTP_SENDER_ADDR=smtp.gmail.com:587
+      - NTFY_SMTP_SENDER_USER=divyesh1099@gmail.com
+      - NTFY_SMTP_SENDER_PASS=${GMAIL_APP_PASSWORD:?Set GMAIL_APP_PASSWORD in .env}
+      - NTFY_SMTP_SENDER_FROM=divyesh1099@gmail.com
+    ports: ["127.0.0.1:8080:80"]
 
 volumes:
   grafana-storage:

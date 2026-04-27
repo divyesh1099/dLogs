@@ -3,8 +3,8 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: dlogs-grafana
-    ports: ["3000:3000"]
-    restart: always
+    ports: ["127.0.0.1:3000:3000"]
+    restart: unless-stopped
     volumes:
       - grafana-storage:/var/lib/grafana
       # Auto-Provisioning
@@ -18,8 +18,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: dlogs-prometheus
-    restart: always
-    ports: ["9090:9090"]
+    restart: unless-stopped
+    ports: ["127.0.0.1:9090:9090"]
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=3d'
@@ -34,15 +34,15 @@ services:
   loki:
     image: grafana/loki:latest
     container_name: dlogs-loki
-    restart: always
+    restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yaml -table-manager.retention-period=3d
-    ports: ["3100:3100"]
+    ports: ["127.0.0.1:3100:3100"]
 
   # --- LOG COLLECTOR ---
   promtail:
     image: grafana/promtail:latest
     container_name: dlogs-promtail
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./config/promtail.yml:/etc/promtail/config.yml
       - /var/log:/var/log
@@ -55,9 +55,9 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
     container_name: dlogs-cadvisor
-    restart: always
+    restart: unless-stopped
     privileged: true
-    ports: ["8090:8080"]
+    ports: ["127.0.0.1:8090:8080"]
     command:
       - -logtostderr
       - --containerd-namespace=moby
@@ -72,7 +72,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     container_name: dlogs-node-exporter
-    restart: always
+    restart: unless-stopped
     pid: host
     volumes:
       - /proc:/host/proc:ro
@@ -88,9 +88,9 @@ services:
   nvidia-exporter:
     image: utkuozdemir/nvidia_gpu_exporter:1.4.1
     container_name: dlogs-gpu
-    restart: always
+    restart: unless-stopped
     profiles: ["gpu"]
-    ports: ["9835:9835"]
+    ports: ["127.0.0.1:9835:9835"]
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -108,9 +108,13 @@ services:
     container_name: dlogs-ntfy
     command: serve
     environment:
-      - NTFY_BASE_URL=https://ntfy.sh
-    ports: ["8080:80"]
-    restart: always
+      - NTFY_BASE_URL=https://ntfy.divyeshvishwakarma.com
+      - NTFY_SMTP_SENDER_ADDR=smtp.gmail.com:587
+      - NTFY_SMTP_SENDER_USER=divyesh1099@gmail.com
+      - NTFY_SMTP_SENDER_PASS=${GMAIL_APP_PASSWORD:?Set GMAIL_APP_PASSWORD in .env}
+      - NTFY_SMTP_SENDER_FROM=divyesh1099@gmail.com
+    ports: ["127.0.0.1:8080:80"]
+    restart: unless-stopped
 
 volumes:
   grafana-storage:
