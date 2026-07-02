@@ -22,15 +22,13 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway status --json || true
 
-      - name: Deploy to Railway (uses deploy/ntfy/railway.json)
-        working-directory: deploy/ntfy
+      - name: Deploy to Railway (root dir on Railway is set to deploy/ntfy)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway up --service dLogs
 
       - name: Dump runtime logs (debug)
         if: always()
-        working-directory: deploy/ntfy
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: railway logs --service dLogs || true
