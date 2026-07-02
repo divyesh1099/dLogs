@@ -16,6 +16,12 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Debug Railway token scope
+        working-directory: deploy/ntfy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway status --json || true
+
       - name: Deploy to Railway (uses deploy/ntfy/railway.json)
         working-directory: deploy/ntfy
         env:
