@@ -1,3 +1,4 @@
 FROM binwiederhier/ntfy:latest
 EXPOSE 80
-CMD ["serve"]
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["ntfy serve --listen-http \":${PORT:-80}\""]
