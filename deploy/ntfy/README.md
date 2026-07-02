@@ -3,11 +3,14 @@
 Standalone deploy of the `ntfy` alerts server, split out of the local dLogs
 stack so it stays reachable when this machine is off.
 
-## Railway setup
+## Railway setup (one-time)
 
-1. New Railway service -> Deploy from this repo.
+1. New Railway service named `ntfy` (the GitHub Action below deploys to a
+   service with this exact name — rename the workflow's `--service` flag
+   if you name it differently).
 2. Set the service's **Root Directory** to `deploy/ntfy` (Settings > Source).
-   Railway will build `Dockerfile` and detect the exposed port automatically.
+   Railway builds `Dockerfile` per `railway.json` and detects the exposed
+   port automatically.
 3. Set these service variables (Settings > Variables), values from the old
    `docker-compose.yml` ntfy block:
    - `NTFY_BASE_URL=https://ntfy.divyeshvishwakarma.com`
@@ -15,8 +18,26 @@ stack so it stays reachable when this machine is off.
    - `NTFY_SMTP_SENDER_USER=divyesh1099@gmail.com`
    - `NTFY_SMTP_SENDER_PASS=<the Gmail app password from the old GMAIL_APP_PASSWORD secret>`
    - `NTFY_SMTP_SENDER_FROM=divyesh1099@gmail.com`
-4. Deploy, then grab the generated `*.up.railway.app` domain from
-   Settings > Networking.
+4. Deploy once manually, then grab the generated `*.up.railway.app` domain
+   from Settings > Networking.
+5. Create a **Project Token** (Project Settings > Tokens, scoped to this
+   project + environment) and add it to the GitHub repo as the
+   `RAILWAY_TOKEN` secret (Settings > Secrets and variables > Actions).
+
+## Continuous deploy
+
+`.github/workflows/deploy-ntfy.yml` runs `railway up --service ntfy` on any
+push to `main` that touches `deploy/ntfy/**`, using `railway.json` in this
+directory for the build/deploy config. Trigger it manually too via
+Actions > Deploy ntfy to Railway > Run workflow.
+
+**Heads up:** this repo's `Auto Release (Bump + Build + Publish)` workflow
+(`.github/workflows/release.yml`) triggers on every push to `main` except
+`README.md`/`docs/**`/`mkdocs.yml`/`.gitignore` — it does **not** exclude
+`deploy/**`. So a push that only touches `deploy/ntfy/**` will also bump
+`pyproject.toml`, publish to PyPI, and push a new Docker image, which has
+nothing to do with ntfy. If that's unwanted, add `deploy/**` to that
+workflow's `paths-ignore`.
 
 ## DNS cutover (Cloudflare)
 
