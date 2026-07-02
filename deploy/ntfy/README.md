@@ -37,6 +37,48 @@ change.
    project + environment) and add it to the GitHub repo as the
    `RAILWAY_TOKEN` secret (Settings -> Secrets and variables -> Actions).
 
+## Locking down individual topics
+
+The server has no auth backend at all by default — every topic is publicly
+readable/writable by anyone who knows (or guesses) its name, and
+`auth-default-access` stays `read-write` even after the change below, so
+this is opt-in per topic and every existing consumer keeps working
+unmodified unless you deliberately add a rule for its topic.
+
+`Dockerfile`'s entrypoint now starts the server, waits for `/data/auth.db`
+to be created, then — only if `NTFY_LOGS_USER` and `NTFY_LOGS_PASSWORD` are
+both set — creates that user (idempotent: safe to redeploy repeatedly, and
+self-healing even without a persistent volume since a fresh redeploy just
+recreates the same state from the env vars) and runs:
+
+```
+ntfy access <NTFY_LOGS_USER> entrust-timer-logs rw
+ntfy access everyone entrust-timer-logs deny
+```
+
+To lock down `entrust-timer-logs` (used by the `entrust-timer` project's
+audit-trail topic):
+
+1. Settings -> Variables on this Railway service, add:
+   - `NTFY_LOGS_USER=entrust-timer`
+   - `NTFY_LOGS_PASSWORD=<a generated secret — not the account password>`
+2. Redeploy. Anonymous publish/subscribe to `entrust-timer-logs` now 403s;
+   `entrust-timer`'s server needs `Authorization: Basic base64(user:pass)`
+   (or per-topic login in the ntfy app) using those same credentials.
+3. All other topics (`ml-training-alerts`, the interactive `entrust-timer`
+   reminder topic, dAgent's, etc.) are untouched — still open, as before.
+
+To lock down additional topics later, extend the `if` block in `Dockerfile`
+with more `ntfy access <user> <topic> <permission>` / `ntfy access everyone
+<topic> deny` pairs (one user can hold rules for multiple topics).
+
+Currently no Railway Volume is attached, so `/data/auth.db` is recreated
+from scratch (from the env vars above) on every redeploy — fine for this
+single-user bootstrap, but means any ad-hoc `ntfy user`/`ntfy access`
+changes made outside of `Dockerfile` (e.g. via `railway ssh`) won't survive
+the next deploy. If this grows beyond a couple of scripted users, attach a
+volume mounted at `/data` and manage users manually instead.
+
 ### Gotcha: healthcheck fails even though the container is running
 
 The `binwiederhier/ntfy` image binds `:80` by default, and `EXPOSE 80` in
