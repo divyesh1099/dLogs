@@ -3,10 +3,24 @@
 Standalone deploy of the `ntfy` alerts server, split out of the local dLogs
 stack so it stays reachable when this machine is off.
 
-Live at: `https://dlogs-production-7b2e.up.railway.app` (Railway project
-`ntfy`, service `dLogs` — the service kept its auto-generated name from the
-repo; only the project was renamed). `ntfy.divyeshvishwakarma.com` should be
-CNAME'd here — see below.
+Live at `https://ntfy.divyeshvishwakarma.com` (custom domain) and
+`https://dlogs-production-7b2e.up.railway.app` (Railway's generated
+domain). Railway project `ntfy`, service `dLogs` — the service kept its
+auto-generated name from the repo; only the project was renamed.
+
+## No email notifications — outbound SMTP is blocked on Railway
+
+Confirmed with two independent providers: Gmail (`smtp.gmail.com:587` and
+`:465`) and Resend (`smtp.resend.com:587`) all fail identically —
+`dial tcp <ip>:<port>: connect: connection timed out`, taking 2-5 minutes
+to time out. This is Railway's network blocking outbound SMTP categorically
+(anti-abuse policy), not a credentials or provider problem. Don't re-add
+`NTFY_SMTP_SENDER_*` variables expecting this to work — it won't, on any
+port, to any destination. The only way to get email notifications out of
+this deployment would be a separate service that subscribes to ntfy's
+message stream and calls an HTTP-based email API (e.g. Resend's
+`api.resend.com`, plain HTTPS) directly — real new code, not a config
+change.
 
 ## Railway setup (one-time)
 
@@ -15,12 +29,8 @@ CNAME'd here — see below.
    **Settings -> Source** and set **Root Directory** to `deploy/ntfy`. Doing
    this after an initial root-level deploy leaves stale config behind —
    set it first.
-3. Settings -> Variables, add:
+3. Settings -> Variables, add just:
    - `NTFY_BASE_URL=https://ntfy.divyeshvishwakarma.com`
-   - `NTFY_SMTP_SENDER_ADDR=smtp.gmail.com:587`
-   - `NTFY_SMTP_SENDER_USER=divyesh1099@gmail.com`
-   - `NTFY_SMTP_SENDER_PASS=<the Gmail app password from the old GMAIL_APP_PASSWORD secret>`
-   - `NTFY_SMTP_SENDER_FROM=divyesh1099@gmail.com`
 4. Deploy, then Settings -> Networking -> **Generate Domain** for the
    `*.up.railway.app` URL.
 5. Create a **Project Token** (Project Settings -> Tokens, scoped to this
@@ -34,11 +44,14 @@ the Dockerfile alone was **not** enough for Railway's healthcheck/routing
 to find it — the container logged `Listening on :80` and served stats
 fine, but `/v1/health` kept timing out from Railway's side. The fix baked
 into `Dockerfile` here overrides the entrypoint to bind `${PORT:-80}`
-explicitly, which is what Railway's Dockerfile-deploy healthcheck expects.
-If you ever rebuild this from scratch and hit the same "healthy container,
-failing healthcheck" symptom, confirm with `railway logs --deployment
---latest` (plain `railway logs` shows build/healthcheck-attempt logs, not
-the container's own stdout) before assuming it's a config problem.
+explicitly, which is what Railway's Dockerfile-deploy healthcheck expects
+(confirmed Railway does assign a `PORT` env var per-deployment — one
+instance got `:80`, another got `:8080`, both worked correctly with this
+fix). If you ever rebuild this from scratch and hit the same "healthy
+container, failing healthcheck" symptom, confirm with `railway logs
+--deployment --latest` (plain `railway logs` shows build/healthcheck-
+attempt logs, not the container's own stdout) before assuming it's a
+config problem.
 
 ## Continuous deploy
 
@@ -50,26 +63,33 @@ push to `main` that touches `deploy/ntfy/**`, using `railway.json` in this
 directory for the build/deploy config. Trigger it manually too via
 Actions > Deploy ntfy to Railway > Run workflow.
 
-## DNS cutover (Cloudflare)
+## DNS cutover (Cloudflare) — already done
 
-`ntfy.divyeshvishwakarma.com` is currently routed through a Cloudflare
-Tunnel on the local PC — that's the piece going away.
+`ntfy.divyeshvishwakarma.com` used to route through a Cloudflare Tunnel on
+the local PC. Steps taken, for reference if this ever needs to be redone:
 
-1. In Cloudflare DNS, replace the tunnel-managed `ntfy` record with a
-   `CNAME` pointing at `dlogs-production-7b2e.up.railway.app`.
-2. If the zone has a Cloudflare Tunnel with a named ingress rule for
-   `ntfy.divyeshvishwakarma.com` (Zero Trust > Networks > Tunnels), delete
-   just that hostname route — leave the rest of the tunnel (e.g.
-   `dagent.divyeshvishwakarma.com`) untouched.
-3. Railway serves HTTPS on its own domain already; if the CNAME is
-   proxied (orange cloud) Cloudflare terminates TLS at the edge and
-   forwards to Railway over HTTPS — that's fine. If you'd rather Railway
-   terminate TLS directly, add the hostname as a custom domain in Railway
-   (Settings > Networking > Custom Domain) and set the CNAME to DNS-only
-   (grey cloud).
-4. Verify before deleting anything on the PC side:
-   `curl -I https://ntfy.divyeshvishwakarma.com/v1/health` should return
-   200 from the new Railway-backed origin.
+1. Removed the `ntfy.divyeshvishwakarma.com` Public Hostname route from
+   the Cloudflare Tunnel config (Zero Trust > Networks > Tunnels) — this
+   also removed the CNAME record it had auto-created. Left the rest of the
+   tunnel (e.g. `dagent.divyeshvishwakarma.com`) untouched.
+2. Registered the domain as a **Custom Domain** in Railway
+   (`railway domain ntfy.divyeshvishwakarma.com --service dLogs`, or
+   Settings -> Networking -> Custom Domain in the dashboard). A plain
+   CNAME to the generated `*.up.railway.app` domain is **not** enough —
+   Railway's edge routes by hostname and returns `404 Application not
+   found` for any hostname it hasn't been told to expect, even if DNS
+   resolves and TCP/TLS reaches Railway fine.
+3. Railway returned a domain-specific CNAME target (different from the
+   generated service domain!) plus a TXT verification record:
+   - `CNAME ntfy -> xjegw624.up.railway.app`
+   - `TXT _railway-verify.ntfy -> railway-verify=<value>`
+   Added both in Cloudflare DNS. CNAME proxy status: Proxied (orange
+   cloud) — works fine since Railway serves a valid public cert.
+4. Ownership verification + certificate issuance took about 2 minutes
+   after the TXT record went live (check with
+   `railway domain status <domain-id>`).
+5. Confirmed SSL/TLS mode is Full or Full (strict) in Cloudflare, not
+   Flexible — Railway's origin only speaks HTTPS.
 
 ## Consumers using this exact hostname
 
