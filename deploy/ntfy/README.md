@@ -5,9 +5,11 @@ stack so it stays reachable when this machine is off.
 
 ## Railway setup (one-time)
 
-1. New Railway service. This is currently named `dLogs-ntfy` in the
-   dashboard — the GitHub Action's `--service` flag must match this
-   exact name (case-sensitive). If you rename the service, update
+1. New Railway service. The Railway **project** is named `dLogs-ntfy`,
+   but the **service** inside it kept its auto-generated name, `dLogs`
+   (from the repo name) — the GitHub Action's `--service` flag targets
+   the service name, not the project name. Check Project Settings which
+   name is current if this drifts, and update
    `.github/workflows/deploy-ntfy.yml` to match.
 2. Set the service's **Root Directory** to `deploy/ntfy` (Settings > Source).
    Railway builds `Dockerfile` per `railway.json` and detects the exposed
@@ -27,7 +29,7 @@ stack so it stays reachable when this machine is off.
 
 ## Continuous deploy
 
-`.github/workflows/deploy-ntfy.yml` runs `railway up --service dLogs-ntfy` on any
+`.github/workflows/deploy-ntfy.yml` runs `railway up --service dLogs` on any
 push to `main` that touches `deploy/ntfy/**`, using `railway.json` in this
 directory for the build/deploy config. Trigger it manually too via
 Actions > Deploy ntfy to Railway > Run workflow.
