@@ -47,9 +47,9 @@ unmodified unless you deliberately add a rule for its topic.
 
 `Dockerfile`'s entrypoint now starts the server, waits for `/data/auth.db`
 to be created, then — only if `NTFY_LOGS_USER` and `NTFY_LOGS_PASSWORD` are
-both set — creates that user (idempotent: safe to redeploy repeatedly, and
-self-healing even without a persistent volume since a fresh redeploy just
-recreates the same state from the env vars) and runs:
+both set — creates that user with role `user` (idempotent: safe to redeploy
+repeatedly, and self-healing even without a persistent volume since a fresh
+redeploy just recreates the same state from the env vars) and runs:
 
 ```
 ntfy access <NTFY_LOGS_USER> entrust-timer-logs rw
@@ -60,7 +60,9 @@ To lock down `entrust-timer-logs` (used by the `entrust-timer` project's
 audit-trail topic):
 
 1. Settings -> Variables on this Railway service, add:
-   - `NTFY_LOGS_USER=entrust-timer`
+   - `NTFY_LOGS_USER=admin` (just a login name, created with role `user` —
+     not ntfy's `--role=admin`; it only gets the `entrust-timer-logs`
+     access granted above, nothing more)
    - `NTFY_LOGS_PASSWORD=<a generated secret — not the account password>`
 2. Redeploy. Anonymous publish/subscribe to `entrust-timer-logs` now 403s;
    `entrust-timer`'s server needs `Authorization: Basic base64(user:pass)`
