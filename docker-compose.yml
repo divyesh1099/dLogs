@@ -102,20 +102,6 @@ services:
               count: all
               capabilities: [gpu]
 
-  # --- ALERTS (ntfy) ---
-  ntfy:
-    image: binwiederhier/ntfy
-    container_name: dlogs-ntfy
-    command: serve
-    environment:
-      - NTFY_BASE_URL=https://ntfy.divyeshvishwakarma.com
-      - NTFY_SMTP_SENDER_ADDR=smtp.gmail.com:587
-      - NTFY_SMTP_SENDER_USER=divyesh1099@gmail.com
-      - NTFY_SMTP_SENDER_PASS=${GMAIL_APP_PASSWORD:?Set GMAIL_APP_PASSWORD in .env}
-      - NTFY_SMTP_SENDER_FROM=divyesh1099@gmail.com
-    ports: ["127.0.0.1:8080:80"]
-    restart: unless-stopped
-
 volumes:
   grafana-storage:
   prometheus-storage:

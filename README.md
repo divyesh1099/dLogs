@@ -16,7 +16,6 @@
 - **🐳 Docker Stats**: CPU/Memory/Network per container (powered by cAdvisor).
 - **🎮 Nvidia GPU Monitoring**: realtime usage, temperatures, and power draw via host-side `nvidia-smi` or Docker's Nvidia runtime.
 - **📜 Centralized Logging**: Logs from your Python apps + Docker logs in one queryable UI.
-- **🔔 Alerts**: Built-in `ntfy` server for push notifications.
 - **🐍 Python SDK**: `dlogs` wrapper to start logging in 2 lines of code.
 
 ---
