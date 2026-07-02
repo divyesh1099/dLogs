@@ -5,9 +5,10 @@ stack so it stays reachable when this machine is off.
 
 ## Railway setup (one-time)
 
-1. New Railway service named `ntfy` (the GitHub Action below deploys to a
-   service with this exact name — rename the workflow's `--service` flag
-   if you name it differently).
+1. New Railway service. This is currently named `dLogs-ntfy` in the
+   dashboard — the GitHub Action's `--service` flag must match this
+   exact name (case-sensitive). If you rename the service, update
+   `.github/workflows/deploy-ntfy.yml` to match.
 2. Set the service's **Root Directory** to `deploy/ntfy` (Settings > Source).
    Railway builds `Dockerfile` per `railway.json` and detects the exposed
    port automatically.
@@ -26,7 +27,7 @@ stack so it stays reachable when this machine is off.
 
 ## Continuous deploy
 
-`.github/workflows/deploy-ntfy.yml` runs `railway up --service ntfy` on any
+`.github/workflows/deploy-ntfy.yml` runs `railway up --service dLogs-ntfy` on any
 push to `main` that touches `deploy/ntfy/**`, using `railway.json` in this
 directory for the build/deploy config. Trigger it manually too via
 Actions > Deploy ntfy to Railway > Run workflow.

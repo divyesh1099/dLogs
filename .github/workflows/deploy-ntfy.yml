@@ -20,4 +20,4 @@ jobs:
         working-directory: deploy/ntfy
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service ntfy --detach
+        run: railway up --service dLogs-ntfy --detach
