@@ -26,4 +26,11 @@ jobs:
         working-directory: deploy/ntfy
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service dLogs --detach
+        run: railway up --service dLogs
+
+      - name: Dump runtime logs (debug)
+        if: always()
+        working-directory: deploy/ntfy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway logs --service dLogs || true
