@@ -54,25 +54,46 @@ redeploy just recreates the same state from the env vars) and runs:
 ```
 ntfy access <NTFY_LOGS_USER> entrust-timer-logs rw
 ntfy access everyone entrust-timer-logs deny
+ntfy access <NTFY_LOGS_USER> dshare-logs rw
+ntfy access everyone dshare-logs deny
 ```
 
-To lock down `entrust-timer-logs` (used by the `entrust-timer` project's
-audit-trail topic):
+`entrust-timer-logs` (the `entrust-timer` project's audit-trail topic) and
+`dshare-logs` (dShare's log topic) are both locked to the same
+`NTFY_LOGS_USER`/`NTFY_LOGS_PASSWORD` account this way — one shared
+credential pair, not a separate user per topic.
 
 1. Settings -> Variables on this Railway service, add:
    - `NTFY_LOGS_USER=admin` (just a login name, created with role `user` —
-     not ntfy's `--role=admin`; it only gets the `entrust-timer-logs`
-     access granted above, nothing more)
+     not ntfy's `--role=admin`; it only gets the topic access granted
+     above, nothing more)
    - `NTFY_LOGS_PASSWORD=<a generated secret — not the account password>`
-2. Redeploy. Anonymous publish/subscribe to `entrust-timer-logs` now 403s;
-   `entrust-timer`'s server needs `Authorization: Basic base64(user:pass)`
-   (or per-topic login in the ntfy app) using those same credentials.
+2. Redeploy. Anonymous publish/subscribe to `entrust-timer-logs` or
+   `dshare-logs` now 403s; publishers to either need
+   `Authorization: Basic base64(user:pass)` (or per-topic login in the ntfy
+   app) using those same credentials.
 3. All other topics (`ml-training-alerts`, the interactive `entrust-timer`
    reminder topic, dAgent's, etc.) are untouched — still open, as before.
 
 To lock down additional topics later, extend the `if` block in `Dockerfile`
 with more `ntfy access <user> <topic> <permission>` / `ntfy access everyone
 <topic> deny` pairs (one user can hold rules for multiple topics).
+
+### Note from the dshare-logs rollout (what NOT to do)
+
+Don't try to configure this via Railway service variables like
+`NTFY_AUTH_FILE` / `NTFY_AUTH_DEFAULT_ACCESS`, and don't attach a volume
+mounted somewhere other than `/data` expecting it to matter — the
+`Dockerfile` entrypoint hardcodes its own `AUTH_FILE=/data/auth.db` and its
+own `--auth-file`/`--auth-default-access` flags on the `ntfy serve` command
+line, so those env vars are silently ignored; they do nothing, good or bad.
+The only supported way to change topic access is editing the `if` block in
+`Dockerfile` directly, per above. (Setting those unused env vars didn't
+cause it, but a stray Volume attach on an unrelated path preceded one
+deploy failure/`Stopping Container` cycle here — undoing both restored the
+previous working deployment. If you're chasing a similar failure, get a
+`railway logs --deployment --latest` from the actual failing deployment
+before assuming a cause.)
 
 Currently no Railway Volume is attached, so `/data/auth.db` is recreated
 from scratch (from the env vars above) on every redeploy — fine for this

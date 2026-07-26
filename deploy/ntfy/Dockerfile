@@ -8,7 +8,7 @@ ENTRYPOINT ["/bin/sh", "-c"]
 # every boot: --ignore-exists no-ops the add, change-pass re-syncs the
 # password from the env var every time (so it self-heals even without a
 # persistent volume, since a fresh redeploy just recreates the same state),
-# and the two `ntfy access` calls are last-write-wins, not additive.
+# and each `ntfy access` pair is last-write-wins per topic, not additive.
 # auth-default-access stays read-write, so every topic without an explicit
 # rule (i.e. everything except what's bootstrapped here) is unaffected —
 # other consumers of this shared ntfy instance keep working unmodified.
@@ -23,5 +23,7 @@ if [ -n \"$NTFY_LOGS_USER\" ] && [ -n \"$NTFY_LOGS_PASSWORD\" ]; then \
   NTFY_PASSWORD=\"$NTFY_LOGS_PASSWORD\" ntfy user --auth-file \"$AUTH_FILE\" change-pass \"$NTFY_LOGS_USER\"; \
   ntfy access --auth-file \"$AUTH_FILE\" \"$NTFY_LOGS_USER\" entrust-timer-logs rw; \
   ntfy access --auth-file \"$AUTH_FILE\" everyone entrust-timer-logs deny; \
+  ntfy access --auth-file \"$AUTH_FILE\" \"$NTFY_LOGS_USER\" dshare-logs rw; \
+  ntfy access --auth-file \"$AUTH_FILE\" everyone dshare-logs deny; \
 fi; \
 wait $SERVER_PID"]
